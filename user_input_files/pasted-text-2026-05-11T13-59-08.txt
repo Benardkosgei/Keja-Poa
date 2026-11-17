@@ -1,0 +1,563 @@
+Below is a **comprehensive master prompt** you can use in ChatGPT / Claude / any AI coding agent to develop a **Complete Real Estate Management System with a Matterport-like 3D Tour Feature**, using your chosen stack:
+
+* **Backend:** Django (DRF)
+* **Frontend:** Next.js + Bootstrap 5
+* **Mobile:** React Native
+* **3D Viewer:** three.js
+* **3D Reconstruction:** Open3D
+* **Hosting:** cPanel (for now)
+* **Tours:** Build own 3D capture + viewer (not Matterport SDK)
+
+---
+
+# ✅ MASTER PROMPT (COPY & PASTE)
+
+You are a senior software architect and full-stack engineer.
+Design and implement a **Complete Real Estate Management System** with a built-in **Matterport-like 3D virtual tour platform**, using the following technology stack:
+
+### Tech Stack Requirements
+
+* **Backend:** Django + Django REST Framework (DRF)
+* **Frontend Web:** Next.js + Bootstrap 5
+* **Mobile App:** React Native
+* **3D Viewer:** three.js (WebGL)
+* **3D Reconstruction Pipeline:** Python + Open3D
+* **Hosting:** cPanel shared hosting initially (Linux, Apache, PHPMyAdmin, MySQL available)
+* **Database:** MySQL (preferred due to cPanel support)
+* **Storage:** Local file storage initially (media folder), but architecture must support future migration to AWS S3
+* **Authentication:** JWT + refresh tokens
+* **Deployment:** Must be deployable on cPanel using WSGI (Passenger or mod_wsgi)
+* **Project must be modular and scalable for future cloud deployment (Docker-ready)**
+
+---
+
+# 1. SYSTEM GOAL
+
+Build a full real estate platform where:
+
+* Admins manage properties, agents, landlords, tenants, clients.
+* Agents can upload properties, photos, videos, documents.
+* Clients can browse, filter, and inquire.
+* Properties can have **interactive 3D walkthrough tours** similar to Matterport:
+
+  * User can move between points
+  * View 360 panoramas
+  * Navigation hotspots
+  * Floor plan mini-map
+  * Measurement tool (optional advanced feature)
+  * Info tags (e.g., kitchen, bedroom)
+* The system must allow creating tours using:
+
+  * 360 images captured by camera/phone
+  * optional depth/point cloud generation
+  * Open3D reconstruction pipeline for producing point cloud and mesh data
+  * three.js rendering for interactive navigation
+
+---
+
+# 2. MODULES REQUIRED (HIGH LEVEL)
+
+### 2.1 Web Application Modules (Next.js)
+
+* Landing page
+* Property listing page
+* Property detail page
+* Agent profile pages
+* Advanced search (location, price, rooms, type, amenities)
+* Authentication pages (login/register)
+* Client dashboard
+* Agent dashboard
+* Admin dashboard
+
+### 2.2 Backend Modules (Django)
+
+* User management & roles
+* Property management
+* Rental management
+* Tenant management
+* Agent management
+* Listing approvals
+* Leads & inquiries
+* Messaging/contact system
+* Payments module (stubbed for now, future M-Pesa integration)
+* Document management (lease docs, title deeds, agreements)
+* Tour management (360 images, hotspots, metadata)
+* Analytics & reports
+
+### 2.3 Mobile App Modules (React Native)
+
+* Browse properties
+* Search/filter
+* View property details
+* View 3D tour
+* Save favorites
+* Contact agent
+* Login/register
+* Agent upload listing (optional)
+
+### 2.4 Matterport-like Tour Module (Custom)
+
+* Tour Builder (upload 360 images)
+* Define scene connections (hotspots)
+* Generate point cloud/mesh using Open3D (optional)
+* three.js viewer with navigation controls
+* Tour data stored in backend database
+* Scenes stored as images + metadata
+
+---
+
+# 3. USER ROLES AND PERMISSIONS
+
+Implement role-based access control:
+
+### Roles:
+
+* Super Admin
+* Admin
+* Agent
+* Landlord
+* Tenant
+* Client (Buyer/Renter)
+
+### Permission Rules:
+
+* Super Admin: full system control
+* Admin: manage listings, approve properties, manage agents, manage tenants, manage landlords
+* Agent: create and manage own properties and tours
+* Landlord: view own properties, view tenant rental info
+* Tenant: view lease, rent status, request maintenance
+* Client: browse listings, save favorites, contact agents
+
+Use Django permissions/groups or a custom RBAC model.
+
+---
+
+# 4. DATABASE DESIGN REQUIREMENTS
+
+Design a MySQL database schema with Django models and migrations.
+
+Entities must include:
+
+* User (custom user model)
+* Profile (agent, landlord, tenant profiles)
+* Property
+* PropertyMedia (images/videos/docs)
+* PropertyAmenities
+* PropertyCategory
+* RentalAgreement
+* RentPayments
+* MaintenanceRequest
+* Inquiry/Lead
+* FavoriteProperty
+* Tour
+* TourScene
+* TourHotspot (links between scenes)
+* TourTag (info tag pinned inside a scene)
+* TourAssets (optional mesh/pointcloud output)
+
+Tour tables must support Matterport-like navigation.
+
+---
+
+# 5. API REQUIREMENTS (DRF)
+
+Build REST APIs with proper versioning:
+
+### API Standards:
+
+* Prefix: `/api/v1/`
+* JWT authentication endpoints:
+
+  * `/auth/register`
+  * `/auth/login`
+  * `/auth/refresh`
+  * `/auth/logout`
+* Must return standardized JSON responses
+* Use pagination, filtering, sorting
+* Use DRF serializers, viewsets, routers
+
+### Property APIs:
+
+* Create/update/delete properties
+* Upload property media
+* Search properties with filters:
+
+  * location
+  * type
+  * price range
+  * bedrooms
+  * bathrooms
+  * amenities
+  * agent
+  * listing type (rent/sale)
+
+### Tour APIs:
+
+* Create tour
+* Upload 360 scenes
+* Define hotspots between scenes
+* Add tags (info points)
+* Retrieve tour JSON format for rendering in three.js viewer
+
+---
+
+# 6. TOUR DATA FORMAT (VERY IMPORTANT)
+
+Design a JSON schema returned by the backend like:
+
+```json
+{
+  "tour_id": 1,
+  "property_id": 45,
+  "title": "Luxury Apartment Tour",
+  "initial_scene": "scene_001",
+  "scenes": [
+    {
+      "scene_id": "scene_001",
+      "name": "Living Room",
+      "panorama_url": "/media/tours/scene_001.jpg",
+      "hotspots": [
+        {
+          "target_scene": "scene_002",
+          "position": {"x": 1.2, "y": 0.3, "z": -2.5},
+          "label": "Go to Kitchen"
+        }
+      ],
+      "tags": [
+        {
+          "title": "Smart TV",
+          "description": "65 inch UHD Smart TV",
+          "position": {"x": 0.5, "y": 0.1, "z": -1.0}
+        }
+      ]
+    }
+  ]
+}
+```
+
+The frontend viewer must load and render this schema.
+
+---
+
+# 7. 3D VIEWER REQUIREMENTS (three.js)
+
+Build a three.js tour viewer that:
+
+* Loads panorama as a sphere texture
+* Allows mouse/touch drag to look around
+* Allows zoom in/out
+* Hotspots appear as clickable icons in 3D space
+* Clicking hotspot transitions to target scene (smooth fade)
+* Info tags show tooltip/modal
+* Works on both desktop and mobile browsers
+* Has mini-map (optional)
+* Has scene list navigation
+* Has loading spinner and progress indicator
+
+Tour viewer must be embedded inside property detail page.
+
+---
+
+# 8. 3D RECONSTRUCTION REQUIREMENTS (Open3D Pipeline)
+
+Build a Python pipeline using Open3D that can:
+
+* Take multiple images or depth images (if available)
+* Create a point cloud (if possible)
+* Create a mesh reconstruction (Poisson reconstruction)
+* Simplify mesh for web usage
+* Export results as `.ply`, `.obj`, or `.glb`
+* Store outputs in server media folder
+
+### Pipeline must include:
+
+* Preprocessing
+* Noise removal
+* Downsampling
+* Normal estimation
+* Mesh generation
+* Texture mapping (optional advanced)
+
+Expose this as a Django background task endpoint:
+
+* `/api/v1/tours/{tour_id}/reconstruct`
+
+Even if full reconstruction is heavy, implement the architecture with job queues (Celery recommended), but provide fallback synchronous mode for MVP.
+
+---
+
+# 9. FRONTEND REQUIREMENTS (Next.js + Bootstrap 5)
+
+Build a professional UI:
+
+### Pages:
+
+* `/` homepage
+* `/properties` list page
+* `/properties/[id]` detail page
+* `/agents`
+* `/agents/[id]`
+* `/dashboard/admin`
+* `/dashboard/agent`
+* `/dashboard/client`
+
+### Features:
+
+* Advanced property filters sidebar
+* Pagination
+* Map integration placeholder
+* Clean responsive UI with Bootstrap cards
+* Property gallery carousel
+* 3D tour embedded viewer section
+* Agent contact form
+* WhatsApp contact integration
+
+### Admin/Agent Dashboard:
+
+* CRUD for properties
+* Upload media
+* Create/edit tours (upload scenes, connect hotspots)
+* Approve listings (admin)
+
+Use Next.js API integration via Axios or Fetch.
+
+---
+
+# 10. MOBILE APP REQUIREMENTS (React Native)
+
+Build a React Native app with:
+
+* Authentication (JWT)
+* Property browsing
+* Filters/search
+* Property detail view
+* Embedded 3D tour viewer (use WebView for three.js viewer)
+* Save favorites
+* Contact agent (call/WhatsApp)
+
+Use Expo if possible for fast development.
+
+---
+
+# 11. SECURITY REQUIREMENTS
+
+Implement:
+
+* JWT authentication
+* Refresh token rotation
+* Password hashing
+* Role-based authorization middleware
+* Rate limiting for login endpoints
+* File upload validation (image only for scenes)
+* Prevent unauthorized access to tours not linked to approved properties
+* Protect admin endpoints
+
+---
+
+# 12. FILE STORAGE REQUIREMENTS
+
+Since hosting is cPanel:
+
+* Use Django media directory: `/media/`
+* Store property images in:
+
+  * `/media/properties/{property_id}/`
+* Store tours in:
+
+  * `/media/tours/{tour_id}/scenes/`
+* Store reconstructions in:
+
+  * `/media/tours/{tour_id}/models/`
+
+Add configuration to easily switch to S3 in future.
+
+---
+
+# 13. DEPLOYMENT REQUIREMENTS (CPANEL)
+
+The solution must include a complete deployment guide for cPanel:
+
+* Setting up Python app in cPanel
+* Installing dependencies using pip
+* Configuring `.env`
+* Setting up static and media directories
+* Setting up MySQL DB in cPanel
+* Setting up WSGI entry point
+* Configuring allowed hosts
+* Configuring CORS for Next.js frontend
+
+Also include a future-ready Docker configuration (optional).
+
+---
+
+# 14. PROJECT STRUCTURE REQUIREMENTS
+
+### Backend folder structure:
+
+* `backend/`
+
+  * `core/`
+  * `accounts/`
+  * `properties/`
+  * `tours/`
+  * `payments/`
+  * `maintenance/`
+  * `analytics/`
+  * `media/`
+
+### Frontend folder structure:
+
+* `frontend/`
+
+  * `pages/`
+  * `components/`
+  * `services/api.js`
+  * `components/tour/ThreeJsTourViewer.jsx`
+  * `components/dashboard/`
+
+### Mobile folder structure:
+
+* `mobile/`
+
+  * `screens/`
+  * `components/`
+  * `services/api.js`
+
+---
+
+# 15. REQUIRED DELIVERABLES
+
+You must output:
+
+## Backend (Django)
+
+* Django project setup
+* Custom user model
+* Models for all modules
+* Serializers, viewsets, routers
+* JWT auth setup
+* Upload endpoints
+* Tour endpoints
+* Open3D reconstruction module
+* Unit tests for critical endpoints
+
+## Frontend (Next.js)
+
+* Bootstrap layout
+* Listing pages
+* Property detail pages
+* Dashboard UI
+* 3D viewer component with three.js
+* Tour builder UI (upload scenes, connect hotspots)
+
+## Mobile (React Native)
+
+* Authentication
+* Property browsing
+* Property detail
+* WebView-based 3D viewer
+
+## Documentation
+
+* Installation guide
+* Deployment guide (cPanel)
+* API documentation
+* Database schema explanation
+* System architecture diagram description
+
+---
+
+# 16. DEVELOPMENT APPROACH
+
+Build the system in phases:
+
+### Phase 1 (MVP Real Estate System)
+
+* Auth
+* Properties CRUD
+* Media upload
+* Search/filter
+* Dashboard
+
+### Phase 2 (Tour Builder + Panorama Viewer)
+
+* Upload 360 scenes
+* Create hotspots
+* Render scenes in three.js viewer
+
+### Phase 3 (Open3D Reconstruction)
+
+* Background job for reconstruction
+* Export point cloud/mesh
+* Load mesh in viewer (optional)
+
+### Phase 4 (Mobile App)
+
+* Basic browsing + tour view
+
+---
+
+# 17. IMPORTANT IMPLEMENTATION NOTES
+
+* The three.js viewer must not require paid services.
+* Use progressive enhancement for heavy 3D.
+* Ensure performance optimization:
+
+  * compress panorama images
+  * lazy-load scenes
+  * cache API results
+* Use clean code and reusable components.
+* Provide sample seed data for properties and tours.
+
+---
+
+# 18. OUTPUT FORMAT
+
+Generate:
+
+1. Full backend code (Django + DRF)
+2. Full frontend code (Next.js + Bootstrap)
+3. Full mobile code (React Native)
+4. Documentation markdown files
+5. SQL schema export (optional)
+6. Step-by-step setup and deployment instructions
+
+---
+
+# 19. FINAL SYSTEM EXPECTATIONS
+
+The final system should allow a user to:
+
+* Register/login
+* Browse properties
+* Open property detail
+* Click “View Virtual Tour”
+* Navigate inside a Matterport-like 3D experience
+* Agents can create a tour by uploading 360 images and connecting scenes
+* Admin can approve properties and tours
+* Mobile app can view tours via embedded viewer
+
+---
+
+# START NOW
+
+Begin by:
+
+1. Defining the database schema (Django models)
+2. Creating backend API endpoints
+3. Creating Next.js UI structure
+4. Implementing the three.js panorama viewer
+5. Implementing tour builder tools
+6. Adding Open3D reconstruction pipeline
+7. Building the React Native mobile app
+8. Providing deployment guide for cPanel
+
+Make sure all code is production-ready, well documented, and scalable.
+
+---
+
+# ✅ END OF PROMPT
+
+---
+
+If you want, I can also generate a **technical requirements document (SRS)** and a **cost estimate based on Kenyan rates + hosting costs**, so you can use it for pitching investors/clients.
